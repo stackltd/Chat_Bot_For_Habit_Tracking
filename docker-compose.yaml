@@ -1,0 +1,40 @@
+services:
+  api:
+    build:
+      context: main
+    container_name: fast_api_container
+    ports:
+      - "8088:8088"
+    networks:
+      - app_network
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  bot:
+    build:
+      context: tg_bot
+    container_name: bot_container
+    networks:
+      - app_network
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  postgres:
+    image: postgres
+    container_name: postgresql_container
+    volumes:
+      - ./postgres_db/:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${db_login}
+      POSTGRES_PASSWORD: ${db_password}
+      POSTGRES_DB: ${db_name}
+    ports:
+      - '5432:5432'
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
