@@ -10,7 +10,8 @@ from dotenv import load_dotenv, find_dotenv
 
 import telebot
 from telebot import TeleBot
-from requests.exceptions import ConnectionError
+from requests.exceptions import ConnectionError, ReadTimeout
+from telebot.apihelper import ApiTelegramException
 from urllib3.exceptions import NewConnectionError, MaxRetryError
 
 from messages import (
@@ -440,27 +441,33 @@ def error_message(bot, message, text):
 
 def add_habit(message, result):
     text = message.text.lstrip("/")
-    user_id = message.from_user.id
-    # result = get_user(user_id)
-    habits = result["user"]["habits"]
-
-    data = {"tg_uid": user_id, "habits": habits | {text: 0}}
-
-    result = patch_user(data)
-    if result["result"]:
-        result = get_user(user_id)
+    if len(text) > 40:
+        bot.send_message(message.chat.id, "В описании привычки должно быть не более 40 символов. Попробуйте еще раз.")
+        bot.register_next_step_handler(
+            message, callback=add_habit, result=result
+        )
+    else:
+        user_id = message.from_user.id
+        # result = get_user(user_id)
         habits = result["user"]["habits"]
 
-        bot.send_message(message.chat.id, f"Привычка '{text}' добавлена!")
-        if habits:
-            list_habits(bot, message, habits)
+        data = {"tg_uid": user_id, "habits": habits | {text: 0}}
+
+        result = patch_user(data)
+        if result["result"]:
+            result = get_user(user_id)
+            habits = result["user"]["habits"]
+
+            bot.send_message(message.chat.id, f"Привычка '{text}' добавлена!")
+            if habits:
+                list_habits(bot, message, habits)
+            else:
+                bot.send_message(
+                    message.chat.id,
+                    empty_list,
+                )
         else:
-            bot.send_message(
-                message.chat.id,
-                empty_list,
-            )
-    else:
-        error_message(bot, message, something_went_wrong)
+            error_message(bot, message, something_went_wrong)
 
 
 def get_user(user_id):
@@ -486,10 +493,12 @@ def main():
         thread = threading.Thread(target=scheduler)
         thread.start()
         bot.polling(none_stop=True)
-    except (ConnectionError, NewConnectionError, MaxRetryError) as ex:
+    except (ConnectionError, NewConnectionError, MaxRetryError, ReadTimeout, ApiTelegramException) as ex:
         # raise
         logger.error(f"Ошибка соединения, {ex}")
+        stop_event.set()
         time.sleep(10)
+        stop_event.clear()
         logger.info("Перезапуск бота")
         main()
 
