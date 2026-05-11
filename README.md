@@ -14,7 +14,7 @@
 
 * **Language**: Python 3.10+
 * **Framework**: [Telebot](https://pypi.org/project/pyTelegramBotAPI/) 
-* **Database**: PostgreSQL / SQLite (через SQLAlchemy или аналоги)
+* **Database**: PostgreSQL
 * **Deployment**: Docker, Docker Compose
 
 ## 🚀 Запуск проекта
