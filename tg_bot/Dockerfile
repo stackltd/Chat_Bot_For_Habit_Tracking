@@ -1,13 +1,29 @@
-FROM python:latest
+# FROM python:latest
+#
+# RUN mkdir app
+#
+# COPY . app/
+#
+# WORKDIR app/
+#
+# RUN python -m pip install --upgrade pip
+#
+# RUN python -m pip install -r requirements.txt
+#
+# CMD python bot.py
+
+
+FROM python:3.12-slim
 
 RUN mkdir app
-
-COPY . app/
-
+RUN mkdir app/tg_bot
 WORKDIR app/
 
-RUN python -m pip install --upgrade pip
+COPY requirements.txt ./tg_bot
 
-RUN python -m pip install -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r ./tg_bot/requirements.txt
 
-CMD python bot.py
+COPY . ./tg_bot
+
+CMD python -m tg_bot.bot

@@ -1,4 +1,5 @@
 import asyncio
+import os
 from logging.config import fileConfig
 
 from sqlalchemy import pool
@@ -7,14 +8,29 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
-# Импортируйте ваши модели и metadata
-from models import Base  # пример импорта Base с metadata
+from dotenv import load_dotenv, find_dotenv
+
+load_dotenv()
+
+from main.models import Base
 
 config = context.config
 
 fileConfig(config.config_file_name)
 
 target_metadata = Base.metadata
+
+load_dotenv(find_dotenv())
+
+login = os.getenv("db_login")
+password = os.getenv("db_password")
+name = os.getenv("db_name")
+host = os.getenv("db_host")
+port = int(os.getenv("db_port"))
+
+DATABASE_URL = f"postgresql+asyncpg://{login}:{password}@{host}:{port}/{name}"
+
+config.set_main_option("sqlalchemy.url", DATABASE_URL)
 
 
 def run_migrations_offline():
